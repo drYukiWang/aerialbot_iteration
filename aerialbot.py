@@ -26,6 +26,9 @@ Image.MAX_IMAGE_PIXELS = None
 
 import tweepy
 
+# ------import self-defined module------------------
+from iterGPS import iterGPS
+
 
 TILE_SIZE = 256  # in pixels
 EARTH_CIRCUMFERENCE = 40075.016686 * 1000  # in meters, at the equator
@@ -782,17 +785,9 @@ class Tweeter:
         else:
             self.api.update_status(text, media_ids=[media.media_id])
 
-def main():
+def single_instance(config, cluster_name, coordinate):
     global VERBOSITY
     global LOGGER
-
-    # load configuration either from config.ini or from a user-supplied file
-    # (the latter option is handy if you want to run multiple instances of
-    # ærialbot with different configurations)
-    configpath = "config.ini"
-    if (len(sys.argv) == 2):
-        configpath = sys.argv[1]
-    config = ConfigObj(configpath, unrepr=True)
 
     # first of all, set up logging at the correct verbosity (and make the
     # verbosity available globally since it's needed for the progress indicator)
@@ -809,7 +804,9 @@ def main():
     tile_url_template = config['GEOGRAPHY']['tile_url_template']
 
     shapefile = config['GEOGRAPHY']['shapefile']
-    point = config['GEOGRAPHY']['point']
+
+    # point = config['GEOGRAPHY']['point']
+    point = coordinate
 
     width = config['GEOGRAPHY']['width']
     height = config['GEOGRAPHY']['height']
@@ -964,6 +961,7 @@ def main():
 
     LOGGER.info("Saving image to disk...")
     image_path = image_path_template.format(
+        output=cluster_name,
         datetime=datetime.today().strftime("%Y-%m-%dT%H.%M.%S"),
         latitude=p.lat,
         longitude=p.lon,
@@ -1017,6 +1015,35 @@ def main():
             tweeter.tweet(tweet_text, media)
 
     LOGGER.info("All done!")
+
+def main():
+    # load configuration either from config.ini or from a user-supplied file
+    # (the latter option is handy if you want to run multiple instances of
+    # ærialbot with different configurations)
+    configpath = "config.ini"
+    if (len(sys.argv) == 2):
+        configpath = sys.argv[1]
+    config = ConfigObj(configpath, unrepr=True)
+
+    # iterate single_instance() based on gps list
+    itergps = iterGPS()
+
+    # ask for input variables - use whitepace to separate
+    clat, clon, dist, num = input("Enter the lat, lon, distance and num: ").split()
+    
+    clat = float(clat) # 21.255079
+    clon = float(clon) # 79.163345
+    dist = float(dist) # 5 # km
+    num = int(num) # 10 # 10X10 grid cells
+
+    # ask for cluster name as the name of output path
+    cluster_name = input("Enter the cluster name: ")
+
+    df_gps = itergps.compute_gps_df(clat, clon, dist, num)
+    coords_list = itergps.get_coords_list(df_gps)
+    for coord in coords_list:
+        single_instance(config, cluster_name, coord)
+
 
 
 if __name__ == "__main__":
