@@ -1,7 +1,10 @@
-aerialbot-*.jpg
-aerialbot-tiles
+# demo output
+*.jpg
+*.jpeg
+*.csv
+tiles/
 aerialbot.log
-config.ini
+# config.ini
 
 # venv stuff
 bin
@@ -11,3 +14,13 @@ pyvenv.cfg
 lib64
 pip-selfcheck.json
 __pycache__
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# vscode settings
+.vscode/
+
+# data
+shapefiles/
+*.gif
